@@ -9,10 +9,8 @@ from PyQt6.QtWidgets import (
     QPushButton, 
     QFileDialog
 )
-from PyQt6.QtGui import QMovie
-from PyQt6.QtCore import QObject, QThread, pyqtSignal
+from PyQt6.QtCore import QThread
 from Worker import *
-
 
 
 class MainWindow(QMainWindow):
@@ -23,11 +21,11 @@ class MainWindow(QMainWindow):
         # ------ USER INTERFACE LOGIC ------
         super().__init__()
         self.setWindowTitle("Spacecraft Temperature Distribution")
-        self.setGeometry(100, 100, 400, 400)
         # ------ WIDGETS ------
         # Path to model.obj input widget
         model_file_path_input_label = QLabel("Model file: ")
         self.model_file_path_input = QLineEdit()
+        self.model_file_path_input.resize(250,20)
         model_file_browse_button = QPushButton("Browse")
         model_file_browse_button.clicked.connect(self.open_file_dialog_model)
         self.model_ready_input_label = QLabel("Model is not loaded yet.")
@@ -35,10 +33,15 @@ class MainWindow(QMainWindow):
         # Path to params.json input widget
         param_file_path_input_label = QLabel("Param file: ")
         self.param_file_path_input = QLineEdit()
+        self.param_file_path_input.resize(250, 20)
         param_file_browse_button = QPushButton("Browse")
         param_file_browse_button.clicked.connect(self.open_file_dialog_params)
         self.param_ready_input_label = QLabel("Params are not loaded yet.")
         self.param_ready_input_label.setStyleSheet('color: red')
+        # Time
+        time_input_label = QLabel("Calculation time: ")
+        self.time_input = QLineEdit()
+        self.time_input.resize(250, 20)
 
         # ------ LAYOUT ------
         layout = QGridLayout()
@@ -52,6 +55,9 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.param_file_path_input, 2, 1)
         layout.addWidget(param_file_browse_button, 2, 2)
         layout.addWidget(self.param_ready_input_label, 3, 0)
+        # Time
+        layout.addWidget(time_input_label, 4, 0)
+        layout.addWidget(self.time_input, 4, 1)
 
         # ------ CONTAINER ------
         container = QWidget()
