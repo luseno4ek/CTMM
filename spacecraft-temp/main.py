@@ -1,24 +1,19 @@
-from pywavefront import Wavefront
 from utils import *
+from ObjParser import *
+
+# ------ BEGIN CONSTANTS ------
 
 model_path = "model2.obj"
+params_path = "parameters.json"
 
-# Load the Wavefront object
-obj_file_path =  model_path
-wavefront = Wavefront(obj_file_path, collect_faces=True)
+# ------ END CONSTANTS ------
 
-# Iterate over each object in the mesh list
-for obj_idx, obj in enumerate(wavefront.mesh_list):
-    obj_vertices = wavefront.vertices
-    obj_faces = obj.faces
 
-    obj_surface_area = calculate_surface_area(obj_vertices, obj_faces)
-    print(f"Surface area of Object {obj_idx + 1}: {obj_surface_area}")
+# ------ BEGIN MAIN ------
 
-    # Calculate intersection area with other objects
-    for other_obj_idx, other_obj in enumerate(wavefront.mesh_list[obj_idx + 1:]):
-        other_obj_vertices = wavefront.vertices
-        other_obj_faces = other_obj.faces
+# parse obj-file to FiniteElementModel
+fe_model = ObjFileParser.parse_obj_to_finite_element_model(model_path)
+# read parameters from json-file
+fe_model.read_params_from_file(params_path)
 
-        intersection_area = calculate_intersection_area(obj_vertices, obj_faces, other_obj_vertices, other_obj_faces)
-        print(f"Intersection area between Object {obj_idx + 1} and Object {obj_idx + 2 + other_obj_idx}: {intersection_area}")
+# ------ END MAIN ------
