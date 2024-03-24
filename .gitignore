@@ -1,2 +1,7 @@
 spacecraft-temp/__pycache__/utils.cpython-311.pyc
 test.ipynb
+spacecraft-temp/__pycache__/FiniteElementModel.cpython-311.pyc
+spacecraft-temp/__pycache__/MainWindow.cpython-311.pyc
+spacecraft-temp/__pycache__/ObjParser.cpython-311.pyc
+spacecraft-temp/__pycache__/LoadingWindow.cpython-311.pyc
+spacecraft-temp/__pycache__/Worker.cpython-311.pyc

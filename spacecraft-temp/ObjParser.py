@@ -35,10 +35,13 @@ class ObjFileParser:
 
             full_surfaces[obj_idx] = obj_surface_area
 
+            start_idx = obj_idx - 1 if obj_idx > 0 else 0
+
             # Calculate intersection area with other objects
-            for other_obj_idx, other_obj in enumerate(mesh_list):
+            for other_obj_idx, other_obj in enumerate(mesh_list[start_idx:obj_idx+2]):
                 other_obj_vertices = wavefront.vertices
                 other_obj_faces = other_obj.faces
+                other_obj_idx = other_obj_idx + start_idx
 
                 if (obj_idx == other_obj_idx):
                     intersection_matrix[obj_idx, other_obj_idx] = 0
@@ -56,11 +59,11 @@ class ObjFileParser:
                 elif intersection_matrix[other_obj_idx, obj_idx] > intersection_area:
                     intersection_matrix[other_obj_idx, obj_idx] = intersection_area
 
-                if log_to_console: 
-                    print("== Intersection matrix ==")
-                    for i in range(n_obj):
-                        for j in range(n_obj):
-                            print(f"{str(intersection_matrix[i, j])[:5]}", end=" ")
-                        print('\n')
+        if log_to_console: 
+            print("== Intersection matrix ==")
+            for i in range(n_obj):
+                for j in range(n_obj):
+                    print(f"{str(intersection_matrix[i, j])[:5]}", end=" ")
+                print('\n')
 
         return FiniteElementModel(full_surfaces, intersection_matrix)
