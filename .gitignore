@@ -5,3 +5,5 @@ spacecraft-temp/__pycache__/MainWindow.cpython-311.pyc
 spacecraft-temp/__pycache__/ObjParser.cpython-311.pyc
 spacecraft-temp/__pycache__/LoadingWindow.cpython-311.pyc
 spacecraft-temp/__pycache__/Worker.cpython-311.pyc
+spacecraft-temp/__pycache__/HeatBalanceEquation.cpython-311.pyc
+spacecraft-temp/__pycache__/MplCanvas.cpython-311.pyc

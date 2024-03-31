@@ -77,3 +77,8 @@ def calculate_intersection_area(obj1_vertices, obj1_faces, obj2_vertices, obj2_f
                 intersection_area += area_of_triangle(*tri1)
 
     return intersection_area
+
+def string_to_function(expression, a=1):
+    def function(t, A=a):
+        return eval(expression)
+    return function

@@ -66,4 +66,4 @@ class ObjFileParser:
                     print(f"{str(intersection_matrix[i, j])[:5]}", end=" ")
                 print('\n')
 
-        return FiniteElementModel(full_surfaces, intersection_matrix)
+        return FiniteElementModel(n_obj, full_surfaces, intersection_matrix)
