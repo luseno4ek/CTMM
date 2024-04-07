@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         # ------ FINITE ELEMENT MODEL LOGIC ------
         self.fe_model = None
-
+        self.stop = False
         # ------ USER INTERFACE LOGIC ------
         super().__init__()
         self.setWindowTitle("Spacecraft Temperature Distribution")
@@ -52,7 +52,8 @@ class MainWindow(QMainWindow):
         start_calculation_button = QPushButton("Start calculations")
         start_calculation_button.clicked.connect(self.start_calculations)
         self.solution_graphics = MplCanvas(self, width=5, height=4, dpi=100)
-
+        stop_calculation_button = QPushButton("Stop calculations")
+        stop_calculation_button.clicked.connect(self.stop_calculations)
         # ------ LAYOUT ------
         layout = QGridLayout()
         # Model
@@ -72,12 +73,17 @@ class MainWindow(QMainWindow):
         # Solution
         layout.addWidget(start_calculation_button, 5, 0, 1, 3)
         layout.addWidget(self.solution_graphics, 6, 0, 1, 3)
+        layout.addWidget(stop_calculation_button, 7, 0, 1, 3)
 
         # ------ CONTAINER ------
         container = QWidget()
         container.setLayout(layout)
 
         self.setCentralWidget(container)
+
+
+    def stop_calculations(self):
+        self.stop = True
 
 
     def open_file_dialog_model(self):
@@ -154,22 +160,35 @@ class MainWindow(QMainWindow):
     
     def start_calculations(self):
         t_max = self.time_input.text()
+        self.y = np.empty((0,5))
+        self.solution_graphics.axes.cla()
         if t_max == 'Infinite':
-            pass
+            t_step = 100
+            t0 = 0
+            t_max = 100
+            while(not self.stop and t_max < 50000):
+                t_max = t0 + t_step
+                self.calculate_and_draw(t0, t_max, t_max)
+                t0 = t_max
         else:
             t_max = int(t_max)
-            eq = HeatBalanceEquation(self.fe_model).equation
-            sol = solve_ivp(fun=eq, 
-                    t_span=[0, t_max], 
-                    y0=self.fe_model.t0, 
-                    args=(50,),
-                    dense_output=True)
-            t = np.linspace(0, t_max, 100)
-            y = sol.sol(t).T
-            print("Solution = ", y[0])
-            self.solution_graphics.axes.cla()
-            self.solution_graphics.axes.plot(t, y)
-            self.solution_graphics.axes.set_xlabel('t')
-            self.solution_graphics.axes.legend(['T1', 'T2', 'T3', 'T4', 'T5'], shadow=True)
-            self.solution_graphics.axes.set_title('Heat Equation')
-            self.solution_graphics.draw()
+            self.calculate_and_draw(0, t_max)
+            
+
+    def calculate_and_draw(self, t0, t_max, N = 100):
+        eq = HeatBalanceEquation(self.fe_model).equation
+        sol = solve_ivp(fun=eq, 
+                t_span=[0, t_max], 
+                y0=self.fe_model.t0, 
+                args=(50,),
+                dense_output=True)
+        t = np.linspace(t0, t_max, 100)
+        y = sol.sol(t).T
+        self.y = np.concatenate([self.y, y])
+        t_full = np.linspace(0, t_max, N)
+        self.solution_graphics.axes.plot(t_full, self.y)
+        self.solution_graphics.axes.set_xlabel('t')
+        self.solution_graphics.axes.legend(['T1', 'T2', 'T3', 'T4', 'T5'], shadow=True)
+        self.solution_graphics.axes.set_title('Heat Equation')
+        self.solution_graphics.draw()
+        self.solution_graphics.flush_events()
