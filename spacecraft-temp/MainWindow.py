@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
         # ------ FINITE ELEMENT MODEL LOGIC ------
         self.fe_model = None
         self.stop = False
+        self.init_value_mode = 'config'
         # ------ USER INTERFACE LOGIC ------
         super().__init__()
         self.setWindowTitle("Spacecraft Temperature Distribution")
@@ -48,6 +49,13 @@ class MainWindow(QMainWindow):
         self.time_input.resize(250, 20)
         self.infinite_time_checkbox = QCheckBox("Infinite time")
         self.infinite_time_checkbox.toggled.connect(self.set_infinite_time)
+        # Initial values 
+        init_values_label = QLabel("Choose initial values from: ")
+        self.init_values_config_checkbox = QCheckBox("Param file")
+        self.init_values_config_checkbox.setChecked(True)
+        self.init_values_steady_checkbox = QCheckBox("Steady solution (f = 0)")
+        self.init_values_config_checkbox.toggled.connect(self.set_init_values_config)
+        self.init_values_steady_checkbox.toggled.connect(self.set_init_values_steady)
         # Solution
         start_calculation_button = QPushButton("Start calculations")
         start_calculation_button.clicked.connect(self.start_calculations)
@@ -57,33 +65,33 @@ class MainWindow(QMainWindow):
         # ------ LAYOUT ------
         layout = QGridLayout()
         # Model
-        layout.addWidget(model_file_path_input_label, 0, 0)
-        layout.addWidget(self.model_file_path_input, 0, 1)
-        layout.addWidget(model_file_browse_button, 0, 2)
-        layout.addWidget(self.model_ready_input_label, 1, 0)
+        layout.addWidget(model_file_path_input_label, 0, 0, 1, 1)
+        layout.addWidget(self.model_file_path_input, 0, 1, 1, 2)
+        layout.addWidget(model_file_browse_button, 0, 3)
+        layout.addWidget(self.model_ready_input_label, 1, 0, 1, 4)
         # Params
-        layout.addWidget(param_file_path_input_label, 2, 0)
-        layout.addWidget(self.param_file_path_input, 2, 1)
-        layout.addWidget(param_file_browse_button, 2, 2)
-        layout.addWidget(self.param_ready_input_label, 3, 0)
+        layout.addWidget(param_file_path_input_label, 2, 0, 1, 1)
+        layout.addWidget(self.param_file_path_input, 2, 1, 1, 2)
+        layout.addWidget(param_file_browse_button, 2, 3)
+        layout.addWidget(self.param_ready_input_label, 3, 0, 1, 4)
         # Time
-        layout.addWidget(time_input_label, 4, 0)
-        layout.addWidget(self.time_input, 4, 1)
-        layout.addWidget(self.infinite_time_checkbox, 4, 2)
+        layout.addWidget(time_input_label, 4, 0, 1, 1)
+        layout.addWidget(self.time_input, 4, 1, 1, 2)
+        layout.addWidget(self.infinite_time_checkbox, 4, 3)
+        # Initial values 
+        layout.addWidget(init_values_label, 5, 0, 1, 1)
+        layout.addWidget(self.init_values_config_checkbox, 6, 0, 1, 1)
+        layout.addWidget(self.init_values_steady_checkbox, 6, 1, 1, 2)
         # Solution
-        layout.addWidget(start_calculation_button, 5, 0, 1, 3)
-        layout.addWidget(self.solution_graphics, 6, 0, 1, 3)
-        layout.addWidget(stop_calculation_button, 7, 0, 1, 3)
+        layout.addWidget(start_calculation_button, 7, 0, 1, 2)
+        layout.addWidget(stop_calculation_button, 7, 2, 1, 2)
+        layout.addWidget(self.solution_graphics, 8, 0, 1, 4)
 
         # ------ CONTAINER ------
         container = QWidget()
         container.setLayout(layout)
 
         self.setCentralWidget(container)
-
-
-    def stop_calculations(self):
-        self.stop = True
 
 
     def open_file_dialog_model(self):
@@ -157,6 +165,27 @@ class MainWindow(QMainWindow):
             self.time_input.setReadOnly(False)
             self.time_input.setText('')
 
+
+    def set_init_values_config(self):
+        config_check_box = self.init_values_config_checkbox
+        steady_check_box = self.init_values_steady_checkbox
+
+        if (config_check_box.isChecked()):
+            steady_check_box.setChecked(False)
+            self.init_value_mode = 'config'
+        else:
+            self.init_value_mode = None
+
+    
+    def set_init_values_steady(self):
+        config_check_box = self.init_values_config_checkbox
+        steady_check_box = self.init_values_steady_checkbox
+
+        if (steady_check_box.isChecked()):
+            config_check_box.setChecked(False)
+            self.init_value_mode = 'steady'
+        else:
+            self.init_value_mode = None
     
     def start_calculations(self):
         t_max = self.time_input.text()
@@ -173,13 +202,19 @@ class MainWindow(QMainWindow):
         else:
             t_max = int(t_max)
             self.calculate_and_draw(0, t_max)
-            
+
+    
+    def stop_calculations(self):
+        self.stop = True
+   
 
     def calculate_and_draw(self, t0, t_max, N = 100):
-        eq = HeatBalanceEquation(self.fe_model).equation
+        hbe = HeatBalanceEquation(self.fe_model)
+        y0 = self.fe_model.t0 if self.init_value_mode == 'config' else hbe.steady_solution()
+        eq = hbe.equation
         sol = solve_ivp(fun=eq, 
                 t_span=[0, t_max], 
-                y0=self.fe_model.t0, 
+                y0=y0, 
                 args=(50,),
                 dense_output=True)
         t = np.linspace(t0, t_max, 100)
