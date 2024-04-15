@@ -15,11 +15,17 @@ from Worker import *
 from HeatBalanceEquation import *
 from scipy.integrate import solve_ivp
 from MplCanvas import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
+from csv import writer
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         # ------ FINITE ELEMENT MODEL LOGIC ------
+        self.save_file_path = '..'
+        self.save_file_name = '/results.csv'
         self.fe_model = None
         self.stop = False
         self.init_value_mode = 'config'
@@ -87,11 +93,28 @@ class MainWindow(QMainWindow):
         layout.addWidget(stop_calculation_button, 7, 2, 1, 2)
         layout.addWidget(self.solution_graphics, 8, 0, 1, 4)
 
+        # ------ MENU ------
+        bar = self.menuBar()
+        settings = bar.addMenu("Settings")
+        save_action = QAction("Save temperatures to..", self)
+        settings.addAction(save_action)
+        settings.triggered[QAction].connect(self.save_path_update)
+
         # ------ CONTAINER ------
         container = QWidget()
         container.setLayout(layout)
 
         self.setCentralWidget(container)
+
+
+    def save_path_update(self):
+        dirname = QFileDialog.getExistingDirectory(
+            self,
+            "Select a directory"
+        )
+        if dirname:
+            self.save_file_path = dirname
+            print(self.save_file_path)
 
 
     def open_file_dialog_model(self):
@@ -187,7 +210,14 @@ class MainWindow(QMainWindow):
         else:
             self.init_value_mode = None
     
+    def write_title(self):
+        with open(self.save_file_path + self.save_file_name, 'a') as f_object:
+            writer_object = writer(f_object)
+            writer_object.writerow(['t', 'T1', 'T2', 'T3', 'T4', 'T5'])
+            f_object.close()
+
     def start_calculations(self):
+        self.write_title()
         t_max = self.time_input.text()
         self.y = np.empty((0,5))
         self.solution_graphics.axes.cla()
@@ -197,7 +227,9 @@ class MainWindow(QMainWindow):
             t_max = 100
             while(not self.stop and t_max < 50000):
                 t_max = t0 + t_step
-                self.calculate_and_draw(t0, t_max, t_max)
+                self.calculate_and_draw(t0, t_max, 
+                                        y_prev=(None if t0 == 0 else self.y[-1]),
+                                        N=t_max)
                 t0 = t_max
         else:
             t_max = int(t_max)
@@ -208,9 +240,10 @@ class MainWindow(QMainWindow):
         self.stop = True
    
 
-    def calculate_and_draw(self, t0, t_max, N = 100):
+    def calculate_and_draw(self, t0, t_max, y_prev = None, N = 100):
         hbe = HeatBalanceEquation(self.fe_model)
-        y0 = self.fe_model.t0 if self.init_value_mode == 'config' else hbe.steady_solution()
+        y0 = y_prev if y_prev is not None \
+            else self.fe_model.t0 if self.init_value_mode == 'config' else hbe.steady_solution()
         eq = hbe.equation
         sol = solve_ivp(fun=eq, 
                 t_span=[0, t_max], 
@@ -219,6 +252,13 @@ class MainWindow(QMainWindow):
                 dense_output=True)
         t = np.linspace(t0, t_max, 100)
         y = sol.sol(t).T
+        y_col = np.round(y, 3)
+        rows = zip(np.round(t, 2), y_col[:, 0], y_col[:, 1], y_col[:, 2], y_col[:, 3], y_col[:, 4])
+        with open(self.save_file_path + self.save_file_name, 'a') as f_object:
+            for row in rows:
+                writer_object = writer(f_object)
+                writer_object.writerow(row)
+            f_object.close()
         self.y = np.concatenate([self.y, y])
         t_full = np.linspace(0, t_max, N)
         self.solution_graphics.axes.plot(t_full, self.y)
