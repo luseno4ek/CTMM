@@ -7,3 +7,5 @@ spacecraft-temp/__pycache__/LoadingWindow.cpython-311.pyc
 spacecraft-temp/__pycache__/Worker.cpython-311.pyc
 spacecraft-temp/__pycache__/HeatBalanceEquation.cpython-311.pyc
 spacecraft-temp/__pycache__/MplCanvas.cpython-311.pyc
+n-body-problem/__pycache__/solution.cpython-311.pyc
+n-body-problem/__pycache__/mp_solution.cpython-311.pyc
